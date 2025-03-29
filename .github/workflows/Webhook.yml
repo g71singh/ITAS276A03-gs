@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sarif-report
-          path: ./sarif-results.sarif
+          path: Results.sarif
 
       - name: Notify Discord - SAST Completed
         uses: tsickert/discord-webhook@v5.3.0
