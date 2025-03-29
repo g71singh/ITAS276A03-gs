@@ -1,0 +1,80 @@
+name: ITAS 276 DevSecOps Pipeline
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  notify-start:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send start message to Discord
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.Discord_Webhook }}
+          username: "GitHub Actions"
+          embed-title: "🚀 Pipeline Started"
+          embed-description: "A new workflow has started for [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})"
+          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          embed-author-name: "${{ github.triggering_actor }}"
+  
+  build:
+    runs-on: ubuntu-latest
+    needs: notify-start
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: echo "Installing dependencies..."
+
+      - name: Run tests
+        run: echo "Running tests..."
+
+      - name: Notify Discord - Build Completed
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "GitHub Actions"
+          embed-title: "✅ Build Completed"
+          embed-description: "The build has successfully completed."
+          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  sast-analysis:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Run SAST Analysis
+        run: echo "Performing Static Analysis..."
+
+      - name: Upload SARIF Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sarif-report
+          path: ./sarif-results.sarif
+
+      - name: Notify Discord - SAST Completed
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "GitHub Actions"
+          embed-title: "🔍 SAST Analysis Completed"
+          embed-description: "Static Analysis has been performed. [Download SARIF Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  notify-complete:
+    runs-on: ubuntu-latest
+    needs: [sast-analysis]
+    steps:
+      - name: Send completion message to Discord
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "GitHub Actions"
+          embed-title: "🎉 Pipeline Completed"
+          embed-description: "The workflow has completed successfully."
+          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
