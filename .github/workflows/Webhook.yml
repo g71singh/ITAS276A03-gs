@@ -1,7 +1,7 @@
-# Workflow for ITAS 276 DevSecOps Assignment 3: Posts pipeline status updates to Discord
+# Workflow for ITAS 276 DevSecOps Assignment 3: A cosmic journey through the pipeline galaxy!
 name: ITAS 276 DevSecOps Pipeline
 
-# Trigger the workflow on push or pull request to the main branch
+# Trigger the workflow when explorers push or pull to the main branch
 on: 
   push:
     branches:
@@ -10,91 +10,95 @@ on:
     branches:
       - main
 
-# Set permissions for the workflow to allow artifact uploads and code access
+# Grant permissions for our spaceship to upload artifacts and scan the cosmos
 permissions:
-  security-events: write  # Required for uploading SARIF files to Code Scanning
-  actions: read          # Needed to access workflow run details
-  contents: read         # Needed to checkout code
+  security-events: write  # For SARIF uploads to Code Scanning
+  actions: read          # To access mission logs (workflow details)
+  contents: read         # To beam up the repository code
 
 jobs:
-  # Job 1: Notify Discord when the pipeline starts
+  # Job 1: Launch the pipeline into orbit with a cosmic announcement
   notify-start:
     runs-on: ubuntu-latest
     steps:
-      - name: Send start message to Discord
+      - name: Send launch message to Mission Control (Discord)
         uses: tsickert/discord-webhook@v5.3.0
         with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}  # Secret storing the Discord webhook URL
-          username: "GitHub Actions"
-          embed-title: "🚀 Pipeline Started"
-          embed-description: "A new workflow has started for [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})"
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}  # Secret coordinates to Discord galaxy
+          username: "Starship Commander"  # Our fearless pipeline leader
+          avatar-url: "https://i.imgur.com/8J9z9qK.png"  # A cool spaceship avatar (public image)
+          embed-title: "🌌 Pipeline Launch Initiated!"
+          embed-description: "Starship [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}) is blasting off! Commit: `${{ github.event.head_commit.message }}`"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          embed-author-name: "${{ github.triggering_actor }}"  # Actor who triggered the workflow
+          embed-author-name: "Pilot: ${{ github.triggering_actor }}"  # The brave soul at the helm
   
-  # Job 2: Build stage - Simulate building the project
+  # Job 2: Build stage - Assemble the starship’s engines
   build:
     runs-on: ubuntu-latest
-    needs: notify-start  # Runs after the start notification
+    needs: notify-start  # Awaits launch clearance
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # Checks out the repository code
+        uses: actions/checkout@v4  # Teleports code aboard
 
       - name: Install dependencies
-        run: echo "Installing dependencies..."  # Placeholder for dependency installation
+        run: echo "Installing dependencies..."  # Simulates engine assembly
 
       - name: Run tests
-        run: echo "Running tests..."  # Placeholder for running tests
+        run: echo "Running tests..."  # Checks if the thrusters work
 
-      - name: Notify Discord - Build Completed
+      - name: Notify Discord - Engines Ready
         uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "GitHub Actions"
-          embed-title: "✅ Build Completed"
-          embed-description: "The build has successfully completed."
+          username: "Starship Commander"
+          avatar-url: "https://i.imgur.com/8J9z9qK.png"
+          embed-title: "🛠️ Engines Online!"
+          embed-description: "The build is complete—ready for warp speed! Status: *Nominal* 🌟"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-  # Job 3: Semgrep stage - Perform SAST scan and upload results
+  # Job 3: Semgrep stage - Scan for asteroid-sized vulnerabilities
   semgrep:
     name: semgrep/ci
     runs-on: ubuntu-latest
-    needs: build  # Runs after the build job
+    needs: build  # Launches after engines are ready
     container:
-      image: semgrep/semgrep  # Uses Semgrep container for SAST scanning
-    if: (github.actor != 'dependabot[bot]')  # Skip if triggered by Dependabot
+      image: semgrep/semgrep  # Deploys the asteroid scanner
+    if: (github.actor != 'dependabot[bot]')  # Ignores robotic probes
     steps:
-      - uses: actions/checkout@v4  # Checks out the code for scanning
+      - uses: actions/checkout@v4  # Scans the cargo hold (code)
 
       - name: Run Semgrep scan
-        run: semgrep ci --sarif > semgrep-results.sarif  # Scans code and outputs SARIF file
+        run: semgrep ci --sarif > semgrep-results.sarif  # Probes for cosmic bugs
         env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}  # Token for Semgrep CI
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}  # Access key to scanner tech
 
       - name: Upload Semgrep SARIF results as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-scan-results  # Name of the uploaded artifact
-          path: semgrep-results.sarif  # Path to the SARIF file
+          name: semgrep-scan-results  # Stores the asteroid map
+          path: semgrep-results.sarif  # Path to the scan data
           
-      - name: Notify Discord - Semgrep Scan Completed
+      - name: Notify Discord - Scan Complete
         uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "GitHub Actions"
-          embed-title: "🔒 Semgrep Scan Completed"
-          embed-description: "Semgrep has scanned the repository for vulnerabilities. [Download SARIF Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          username: "Starship Commander"
+          avatar-url: "https://i.imgur.com/8J9z9qK.png"
+          embed-title: "🕵️‍♂️ Asteroid Scan Complete!"
+          embed-description: "Semgrep has mapped vulnerabilities. [Download Cosmic Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})—hope it’s not a meteor shower!"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-  # Job 4: Notify Discord when the pipeline completes
+  # Job 4: Celebrate a successful mission with a galactic victory cry
   notify-complete:
     runs-on: ubuntu-latest
-    needs: [semgrep]  # Runs after the Semgrep scan
+    needs: [semgrep]  # Lands after the scan is done
     steps:
-      - name: Send completion message to Discord
+      - name: Send victory message to Discord
         uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "GitHub Actions"
-          embed-title: "🎉 Pipeline Completed"
-          embed-description: "The workflow has completed successfully."
+          username: "Starship Commander"
+          avatar-url: "https://i.imgur.com/8J9z9qK.png"
+          embed-title: "🏆 Mission Accomplished!"
+          embed-description: "The pipeline has landed safely in the [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}) galaxy. All systems green! 🌍✨"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
