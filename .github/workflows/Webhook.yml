@@ -1,7 +1,7 @@
-# Workflow for ITAS 276 DevSecOps Assignment 3: A cosmic journey through the pipeline galaxy!
+# Workflow for ITAS 276 DevSecOps Assignment 3: A high-octane race through the pipeline track!
 name: ITAS 276 DevSecOps Pipeline
 
-# Trigger the workflow when explorers push or pull to the main branch
+# Start the engines on push or pull request to the main branch
 on: 
   push:
     branches:
@@ -10,95 +10,95 @@ on:
     branches:
       - main
 
-# Grant permissions for our spaceship to upload artifacts and scan the cosmos
+# Grant permissions for our pit crew to tune the car and log the race
 permissions:
-  security-events: write  # For SARIF uploads to Code Scanning
-  actions: read          # To access mission logs (workflow details)
-  contents: read         # To beam up the repository code
+  security-events: write  # For uploading SARIF files to the race log
+  actions: read          # To track lap times (workflow details)
+  contents: read         # To load the car (repository code)
 
 jobs:
-  # Job 1: Launch the pipeline into orbit with a cosmic announcement
+  # Job 1: Rev up the engines and announce the race start
   notify-start:
     runs-on: ubuntu-latest
     steps:
-      - name: Send launch message to Mission Control (Discord)
+      - name: Send race start message to Pit Crew (Discord)
         uses: tsickert/discord-webhook@v5.3.0
         with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}  # Secret coordinates to Discord galaxy
-          username: "Starship Commander"  # Our fearless pipeline leader
-          avatar-url: "https://i.imgur.com/8J9z9qK.png"  # A cool spaceship avatar (public image)
-          embed-title: "🌌 Pipeline Launch Initiated!"
-          embed-description: "Starship [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}) is blasting off! Commit: `${{ github.event.head_commit.message }}`"
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}  # Secret radio to the pit crew
+          username: "Race Crew Chief"  # The boss calling the shots
+          avatar-url: "https://i.imgur.com/5z5K9XJ.png"  # A cool race car avatar (public image)
+          embed-title: "🏁 Race On!"
+          embed-description: "Car [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}) is peeling out! Driver’s note: `${{ github.event.head_commit.message }}`"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          embed-author-name: "Pilot: ${{ github.triggering_actor }}"  # The brave soul at the helm
+          embed-author-name: "Driver: ${{ github.triggering_actor }}"  # The speedster behind the wheel
   
-  # Job 2: Build stage - Assemble the starship’s engines
+  # Job 2: Build stage - Tune the car in the garage
   build:
     runs-on: ubuntu-latest
-    needs: notify-start  # Awaits launch clearance
+    needs: notify-start  # Waits for the green flag
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # Teleports code aboard
+        uses: actions/checkout@v4  # Rolls the car into the garage
 
       - name: Install dependencies
-        run: echo "Installing dependencies..."  # Simulates engine assembly
+        run: echo "Installing dependencies..."  # Bolts on the turbo
 
       - name: Run tests
-        run: echo "Running tests..."  # Checks if the thrusters work
+        run: echo "Running tests..."  # Revs the engine for a test lap
 
-      - name: Notify Discord - Engines Ready
+      - name: Notify Discord - Car Tuned
         uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "Starship Commander"
-          avatar-url: "https://i.imgur.com/8J9z9qK.png"
-          embed-title: "🛠️ Engines Online!"
-          embed-description: "The build is complete—ready for warp speed! Status: *Nominal* 🌟"
+          username: "Race Crew Chief"
+          avatar-url: "https://i.imgur.com/5z5K9XJ.png"
+          embed-title: "🔧 Pit Stop Complete!"
+          embed-description: "The car’s tuned and purring like a champ! Ready to hit the track 🏎️"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-  # Job 3: Semgrep stage - Scan for asteroid-sized vulnerabilities
+  # Job 3: Semgrep stage - Check the car for safety hazards
   semgrep:
     name: semgrep/ci
     runs-on: ubuntu-latest
-    needs: build  # Launches after engines are ready
+    needs: build  # Hits the track after tuning
     container:
-      image: semgrep/semgrep  # Deploys the asteroid scanner
-    if: (github.actor != 'dependabot[bot]')  # Ignores robotic probes
+      image: semgrep/semgrep  # Fires up the safety scanner
+    if: (github.actor != 'dependabot[bot]')  # Ignores automated pit bots
     steps:
-      - uses: actions/checkout@v4  # Scans the cargo hold (code)
+      - uses: actions/checkout@v4  # Inspects the chassis (code)
 
       - name: Run Semgrep scan
-        run: semgrep ci --sarif > semgrep-results.sarif  # Probes for cosmic bugs
+        run: semgrep ci --sarif > semgrep-results.sarif  # Scans for loose bolts
         env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}  # Access key to scanner tech
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}  # Key to the diagnostic tool
 
       - name: Upload Semgrep SARIF results as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-scan-results  # Stores the asteroid map
-          path: semgrep-results.sarif  # Path to the scan data
+          name: semgrep-scan-results  # Logs the safety report
+          path: semgrep-results.sarif  # Path to the diagnostics
           
-      - name: Notify Discord - Scan Complete
+      - name: Notify Discord - Safety Check Done
         uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "Starship Commander"
-          avatar-url: "https://i.imgur.com/8J9z9qK.png"
-          embed-title: "🕵️‍♂️ Asteroid Scan Complete!"
-          embed-description: "Semgrep has mapped vulnerabilities. [Download Cosmic Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})—hope it’s not a meteor shower!"
+          username: "Race Crew Chief"
+          avatar-url: "https://i.imgur.com/5z5K9XJ.png"
+          embed-title: "🛡️ Safety Check Cleared!"
+          embed-description: "Semgrep’s given the green light. [Download Race Diagnostics](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})—no flats detected!"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-  # Job 4: Celebrate a successful mission with a galactic victory cry
+  # Job 4: Cross the finish line with a victory lap
   notify-complete:
     runs-on: ubuntu-latest
-    needs: [semgrep]  # Lands after the scan is done
+    needs: [semgrep]  # Pulls into victory lane after the scan
     steps:
-      - name: Send victory message to Discord
+      - name: Send finish line message to Discord
         uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "Starship Commander"
-          avatar-url: "https://i.imgur.com/8J9z9qK.png"
-          embed-title: "🏆 Mission Accomplished!"
-          embed-description: "The pipeline has landed safely in the [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}) galaxy. All systems green! 🌍✨"
+          username: "Race Crew Chief"
+          avatar-url: "https://i.imgur.com/5z5K9XJ.png"
+          embed-title: "🏆 Checkered Flag!"
+          embed-description: "Car [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}) has crossed the finish line in style! Full throttle success! 🎉"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
