@@ -1,5 +1,7 @@
+# Workflow for ITAS 276 DevSecOps Assignment 3: Posts pipeline status updates to Discord
 name: ITAS 276 DevSecOps Pipeline
 
+# Trigger the workflow on push or pull request to the main branch
 on: 
   push:
     branches:
@@ -8,38 +10,40 @@ on:
     branches:
       - main
 
-# Add permissions at the workflow level
+# Set permissions for the workflow to allow artifact uploads and code access
 permissions:
   security-events: write  # Required for uploading SARIF files to Code Scanning
   actions: read          # Needed to access workflow run details
   contents: read         # Needed to checkout code
 
 jobs:
+  # Job 1: Notify Discord when the pipeline starts
   notify-start:
     runs-on: ubuntu-latest
     steps:
       - name: Send start message to Discord
         uses: tsickert/discord-webhook@v5.3.0
         with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}  # Secret storing the Discord webhook URL
           username: "GitHub Actions"
           embed-title: "🚀 Pipeline Started"
           embed-description: "A new workflow has started for [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          embed-author-name: "${{ github.triggering_actor }}"
+          embed-author-name: "${{ github.triggering_actor }}"  # Actor who triggered the workflow
   
+  # Job 2: Build stage - Simulate building the project
   build:
     runs-on: ubuntu-latest
-    needs: notify-start
+    needs: notify-start  # Runs after the start notification
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # Checks out the repository code
 
       - name: Install dependencies
-        run: echo "Installing dependencies..."
+        run: echo "Installing dependencies..."  # Placeholder for dependency installation
 
       - name: Run tests
-        run: echo "Running tests..."
+        run: echo "Running tests..."  # Placeholder for running tests
 
       - name: Notify Discord - Build Completed
         uses: tsickert/discord-webhook@v5.3.0
@@ -50,28 +54,27 @@ jobs:
           embed-description: "The build has successfully completed."
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
+  # Job 3: Semgrep stage - Perform SAST scan and upload results
   semgrep:
     name: semgrep/ci
     runs-on: ubuntu-latest
-    needs: build
-    
+    needs: build  # Runs after the build job
     container:
-      image: semgrep/semgrep
-
-    if: (github.actor != 'dependabot[bot]')
-
+      image: semgrep/semgrep  # Uses Semgrep container for SAST scanning
+    if: (github.actor != 'dependabot[bot]')  # Skip if triggered by Dependabot
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # Checks out the code for scanning
 
-      - run: semgrep ci --sarif > semgrep-results.sarif
+      - name: Run Semgrep scan
+        run: semgrep ci --sarif > semgrep-results.sarif  # Scans code and outputs SARIF file
         env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}  # Token for Semgrep CI
 
       - name: Upload Semgrep SARIF results as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-scan-results
-          path: semgrep-results.sarif
+          name: semgrep-scan-results  # Name of the uploaded artifact
+          path: semgrep-results.sarif  # Path to the SARIF file
           
       - name: Notify Discord - Semgrep Scan Completed
         uses: tsickert/discord-webhook@v5.3.0
@@ -82,31 +85,10 @@ jobs:
           embed-description: "Semgrep has scanned the repository for vulnerabilities. [Download SARIF Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-  sast-analysis:
-    runs-on: ubuntu-latest
-    needs: semgrep
-    steps:
-      - name: Run SAST Analysis
-        run: echo "Performing Static Analysis..."
-
-      - name: Upload SARIF Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: sarif-report
-          path: Results.sarif
-
-      - name: Notify Discord - SAST Completed
-        uses: tsickert/discord-webhook@v5.3.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
-          username: "GitHub Actions"
-          embed-title: "🔍 SAST Analysis Completed"
-          embed-description: "Static Analysis has been performed. [Download SARIF Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
+  # Job 4: Notify Discord when the pipeline completes
   notify-complete:
     runs-on: ubuntu-latest
-    needs: [sast-analysis]
+    needs: [semgrep]  # Runs after the Semgrep scan
     steps:
       - name: Send completion message to Discord
         uses: tsickert/discord-webhook@v5.3.0
