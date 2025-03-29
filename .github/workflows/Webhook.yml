@@ -15,7 +15,7 @@ jobs:
       - name: Send start message to Discord
         uses: tsickert/discord-webhook@v5.3.0
         with:
-          webhook-url: ${{ secrets.Discord_Webhook }}
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           username: "GitHub Actions"
           embed-title: "🚀 Pipeline Started"
           embed-description: "A new workflow has started for [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})"
@@ -44,9 +44,44 @@ jobs:
           embed-description: "The build has successfully completed."
           embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-  sast-analysis:
+  snyk-scan:
     runs-on: ubuntu-latest
     needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master  # Use the appropriate Snyk action for your project (e.g., node, maven, python, etc.)
+        continue-on-error: true  # Ensures the workflow continues even if vulnerabilities are found
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Requires a Snyk API token stored in GitHub Secrets
+        with:
+          args: --sarif-file-output=snyk.sarif  # Outputs scan results to a SARIF file
+
+      - name: Upload Snyk SARIF Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-sarif-report
+          path: snyk.sarif
+
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+
+      - name: Notify Discord - Snyk Scan Completed
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "GitHub Actions"
+          embed-title: "🔒 Snyk Scan Completed"
+          embed-description: "Snyk has scanned the repository for vulnerabilities. [Download SARIF Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  sast-analysis:
+    runs-on: ubuntu-latest
+    needs: snyk-scan  # Updated to depend on snyk-scan instead of build
     steps:
       - name: Run SAST Analysis
         run: echo "Performing Static Analysis..."
